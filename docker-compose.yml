@@ -1,0 +1,58 @@
+
+services:
+  # Servicio de MySQL
+  db:
+    image: mysql:8.0
+    container_name: reservation-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=reservationdb
+    volumes:
+      - db-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - reservation-network
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - reservation-network
+
+  # Servicio de la aplicación Spring Boot
+  app:
+    build: .
+    container_name: reservation-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/reservationdb
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_REDIS_HOST=redis
+    depends_on:
+      - db
+      - redis
+    networks:
+      - reservation-network
+
+  # Servicio de Adminer (interfaz para gestionar la base de datos)
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - reservation-network
+
+networks:
+  reservation-network:
+    driver: bridge
+
+volumes:
+  db-data:
